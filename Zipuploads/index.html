@@ -2,24 +2,17 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-	<title>
-		HTML audio autoplay Attribute
-	</title>
-</head>
-
-<body style="text-align: center">
-
-	<h1 style="color: green">
-		GeeksforGeeks
-	</h1>
-	
-	<h2>HTML audio autoplay Attribute</h2>
-
-	<audio controls autoplay>
-		<source src="https://tamjmyfileownproperty1.on.drv.tw/www.myfile.com/tamj/music/cant_take_my_eyes_of_you.mp3" type="audio/mpeg">
-		<source src="https://tamjmyfileownproperty1.on.drv.tw/www.myfile.com/tamj/music/cant_take_my_eyes_of_you.mp3" type="audio/mpeg">
-	</audio>
-</body>
-
-</html>
+<iframe src="cant_take_my_eyes_of_you.mp3" allow="autoplay" style="display:none" id="iframeAudio">
+</iframe> 
+	<audio autoplay loop  id="playAudio">
+    <source src="cant_take_my_eyes_of_you.mp3">
+</audio>
+	<script>
+		var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  if (!isChrome){
+      $('#iframeAudio').remove()
+  }
+  else {
+      $('#playAudio').remove() // just to make sure that it will not have 2x audio in the background 
+  }
+	</script>
