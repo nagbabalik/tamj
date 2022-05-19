@@ -1294,27 +1294,19 @@ header .logo a {
  * ------------------------------------------------------------------- 
  */
 #intro {
-	background: #151515 url(images/intro-bg.jpg) no-repeat center bottom;
+	background:  url(https://tamjmyfileownproperty1.on.drv.tw/www.myfile.com/tamj/myfiles/1.jpg) no-repeat center ;
 	-webkit-background-size: cover;
 	-moz-background-size: cover;
 	background-size: cover;
 	background-attachment: fixed;
 	width: 100%;
 	height: 100%;
-	min-height: 720px;
+	min-height: 20px;
 	display: table;
-	position: relative;
+	position: center;
 	text-align: center;
 }
-.intro-overlay {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background: #111111;
-	opacity: .85;
-}
+
 
 .intro-content {
 	display: table-cell;
