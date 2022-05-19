@@ -2,3 +2,12 @@
 <audio autoplay controls
     source src="https://tamjmyfileownproperty1.on.drv.tw/www.myfile.com/tamj/music/cant_take_my_eyes_of_you.mp3">
 </audio>
+<script>
+    var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  if (!isChrome){
+      $('#iframeAudio').remove()
+  }
+  else {
+      $('#playAudio').remove() // just to make sure that it will not have 2x audio in the background 
+  }
+</script>
