@@ -1,155 +1,105 @@
 #!/bin/bash
+# Script  By SL
+# 2022 SLOWDNS
+# ===============================================
+cd
+rm -rf slhostdns.sh
+wget https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/slhostdns.sh && chmod +x slhostdns.sh && ./slhostdns.sh
+nameserver=$(cat /root/nsdomain)
+apt update -y
+apt install -y python3 python3-dnslib net-tools
+apt install ncurses-utils -y
+apt install dnsutils -y
+apt install golang -y
+apt install git -y
+apt install curl -y
+apt install wget -y
+apt install ncurses-utils -y
+apt install screen -y
+apt install cron -y
+apt install iptables -y
+apt install -y git screen whois dropbear wget
+apt install -y pwgen python php jq curl
+apt install -y sudo gnutls-bin
+apt install -y mlocate dh-make libaudit-dev build-essential
+apt install -y dos2unix debconf-utils
+service cron reload
+service cron restart
+#sl-fix
+cd /usr/bin
+wget -O sl-fix "https://raw.githubusercontent.com/fisabiliyusri/Mantap/main/sslh-fix/sl-fix"
+chmod +x sl-fix
+sl-fix
+cd
+echo "Port 3369" >> /etc/ssh/sshd_config
+echo "Port 2269" >> /etc/ssh/sshd_config
+sed -i 's/#AllowTcpForwarding yes/AllowTcpForwarding yes/g' /etc/ssh/sshd_config
+rm -rf /etc/slowdns
+mkdir -m 777 /etc/slowdns
+wget -q -O /etc/slowdns/server.key "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/server.key"
+wget -q -O /etc/slowdns/server.pub "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/server.pub"
+wget -q -O /etc/slowdns/sldns-server "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/sldns-server"
+wget -q -O /etc/slowdns/sldns-client "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/sldns-client"
+cd
+chmod +x /etc/slowdns/server.key
+chmod +x /etc/slowdns/server.pub
+chmod +x /etc/slowdns/sldns-server
+chmod +x /etc/slowdns/sldns-client
+cd
+#wget -q -O /etc/systemd/system/client-sldns.service "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/client-sldns.service"
+#wget -q -O /etc/systemd/system/server-sldns.service "https://raw.githubusercontent.com/fisabiliyusri/SLDNS/main/slowdns/server-sldns.service"
+cd
+#install client-sldns.service
+cat > /etc/systemd/system/client-sldns.service << END
+[Unit]
+Description=Client SlowDNS By SL
+Documentation=https://nekopoi.care
+After=network.target nss-lookup.target
 
-# ================== CONFIGURATION ==================
-ADMIN_USER="admin" # Change this
-ADMIN_PASS="your_secure_password" # Change this
-DOMAIN="yourdomain.com" # Your domain
-BANNER_FILE="/etc/motd.banner"
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/etc/slowdns/sldns-client -udp 8.8.8.8:53 --pubkey-file /etc/slowdns/server.pub $nameserver 127.0.0.1:3369
+Restart=on-failure
 
-# ================== FUNCTIONS ==================
+[Install]
+WantedBy=multi-user.target
+END
+cd
+#install server-sldns.service
+cat > /etc/systemd/system/server-sldns.service << END
+[Unit]
+Description=Server SlowDNS By SL
+Documentation=https://nekopoi.care
+After=network.target nss-lookup.target
 
-# Check root
-if [ "$EUID" -ne 0 ]; then
-  echo "Please run as root!"
-  exit 1
-fi
+[Service]
+Type=simple
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+ExecStart=/etc/slowdns/sldns-server -udp :5300 -privkey-file /etc/slowdns/server.key $nameserver 127.0.0.1:2269
+Restart=on-failure
 
-# Save info
-save_dns_info() {
-  echo "Public Key: $DNS_PUBLIC_KEY" > /etc/vpn/setup-info.txt
-  echo "NS Hostname: $NS_HOSTNAME" >> /etc/vpn/setup-info.txt
-  echo "Configure your DNS server with this public key."
-}
-
-# Show info
-show_info() {
-  echo "=== DNS Tunnel Info ==="
-  [ -f /etc/vpn/setup-info.txt ] && cat /etc/vpn/setup-info.txt || echo "Please run setup first."
-}
-
-# Show setup instructions
-show_instructions() {
-  echo ""
-  echo "=== Setup Instructions ==="
-  echo "Public Key: $DNS_PUBLIC_KEY"
-  echo "NS Hostname: $NS_HOSTNAME"
-  echo "Configure your DNS zone to include NS record and point your domain to your server IP."
-  echo "Set your DNS server with the public key."
-  echo ""
-}
-
-# Banner
-set_banner() {
-  echo "Enter your banner message:"
-  read -r banner_msg
-  echo "$banner_msg" > "$BANNER_FILE"
-  echo "Banner message saved."
-  echo "Add this line to /etc/ssh/sshd_config:"
-  echo "Banner $BANNER_FILE"
-}
-
-show_banner() {
-  [ -f "$BANNER_FILE" ] && cat "$BANNER_FILE"
-}
-
-# Install bind9
-install_dependencies() {
-  echo "Installing dependencies..."
-  apt update && apt upgrade -y
-  apt install -y bind9
-}
-
-# Add NS record to zone file
-add_ns_record() {
-  echo "Enter your NS hostname (e.g., ns1.yourdomain.com):"
-  read -r NS_HOSTNAME
-  # Get your server's public IP
-  NS_IP=$(curl -s https://api.ipify.org)
-  ZONE_FILE="/etc/bind/db.$DOMAIN"
-  echo "Adding NS record to zone file..."
-  cat >> "$ZONE_FILE" <<EOF
-
-@       IN  NS  $NS_HOSTNAME.
-$NS_HOSTNAME IN A $NS_IP
-EOF
-  echo "Reloading bind9..."
-  systemctl reload bind9
-  echo "NS record added: $NS_HOSTNAME with IP $NS_IP"
-}
-
-# Setup DNS tunnel (user must deploy their DNS server)
-setup_dns_tunnel() {
-  echo "Configure your DNS server with the public key."
-  # You need to deploy your DNS server separately
-}
-
-# --- Main ---
-main() {
-  # Prompt for your domain
-  read -p "Enter your domain (e.g., yourdomain.com): " DOMAIN
-  # Your public key for DNS tunnel
-  echo "Enter your DNS public key:"
-  read -p "Public Key: " DNS_PUBLIC_KEY
-  # NS hostname
-  echo "Enter your NS hostname (e.g., ns1.yourdomain.com):"
-  read -r NS_HOSTNAME
-
-  # Install bind9 (if not installed)
-  install_dependencies
-
-  # Setup zone file if not exist
-  ZONE_FILE="/etc/bind/db.$DOMAIN"
-  if [ ! -f "$ZONE_FILE" ]; then
-    echo "Creating zone file..."
-    cat > "$ZONE_FILE" <<EOF
-\$TTL 86400
-@   IN  SOA $NS_HOSTNAME. admin.$DOMAIN. (
-        2023010101 ; serial
-        3600       ; refresh
-        1800       ; retry
-        604800     ; expire
-        86400 )   ; minimum
-@       IN  NS  $NS_HOSTNAME.
-$NS_HOSTNAME IN A $(curl -s https://api.ipify.org)
-EOF
-  fi
-
-  # Add NS record and reload
-  add_ns_record
-
-  # Save info for user
-  save_dns_info
-
-  # Instructions
-  show_instructions
-
-  echo "Installation complete."
-}
-
-# --- Menu ---
-show_menu() {
-  echo "=== Main Menu ==="
-  echo "1) Run setup"
-  echo "2) Manage users (not applicable here)"
-  echo "3) Show DNS info"
-  echo "4) Show setup instructions"
-  echo "5) Set banner message"
-  echo "6) Show current banner"
-  echo "7) Exit"
-}
-
-# --- Main loop ---
-while true; do
-  show_menu
-  read -p "Choose an option: " choice
-  case "$choice" in
-    1) main ;;
-    2) echo "User management not implemented here." ;;
-    3) show_info ;;
-    4) show_instructions ;;
-    5) set_banner ;;
-    6) show_banner ;;
-    7) echo "Goodbye!"; exit 0 ;;
-    *) echo "Invalid option"; sleep 2 ;;
-  esac
-done
+[Install]
+WantedBy=multi-user.target
+END
+cd
+chmod +x /etc/systemd/system/client-sldns.service
+chmod +x /etc/systemd/system/server-sldns.service
+pkill sldns-server
+pkill sldns-client
+systemctl daemon-reload
+systemctl stop client-sldns
+systemctl stop server-sldns
+systemctl enable client-sldns
+systemctl enable server-sldns
+systemctl start client-sldns
+systemctl start server-sldns
+systemctl restart client-sldns
+systemctl restart server-sldns
+cd
