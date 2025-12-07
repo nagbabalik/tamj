@@ -1,7 +1,7 @@
 read -p "Enter installation password: " PASS
 
 curl -sL -H "X-Access-Key: $PASS" \
-  https://jerico-secured-c3f9.mjtsystem.workers.dev -o real.sh
+  https://jerico-secured-c3f9.mjtsystem.workers.dev -o install
 
 if grep -q "Unauthorized" real.sh; then
     echo "❌ Wrong password!"
