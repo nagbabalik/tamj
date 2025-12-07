@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -n "Enter installation password: "
+echo -n "Enter installation password:"
 read PASS
 
 curl -sL -H "X-Access-Key: $PASS" \
